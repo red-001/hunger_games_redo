@@ -190,6 +190,31 @@ tnt.register_tnt(definition)
 ^ Ignite TNT at position
 
 
+Give Initial Stuff API
+----------------------
+
+give_initial_stuff.give(player)
+ -> Give initial stuff to "player"
+
+give_initial_stuff.add(stack)
+ -> Add item to the initial stuff
+ -> Stack can be an ItemStack or a item name eg: "default:dirt 99"
+ -> Can be called after the game has loaded
+
+give_initial_stuff.clear()
+ -> Removes all items from the initial stuff
+ -> Can be called after the game has loaded
+
+give_initial_stuff.get_list()
+ -> returns list of item stacks
+
+give_initial_stuff.set_list(list)
+ -> List of initial items with numeric indices.
+
+ give_initial_stuff.from_csv(str)
+  -> str is a comma separated list of initial stuff
+  -> sets items to that list
+
 Screwdriver API
 ---------------
 The screwdriver API allows you to control a node's behaviour when a screwdriver is used on it.
