@@ -150,9 +150,8 @@ local function may_replace(pos, player)
 end
 
 minetest.register_on_dieplayer(function(player)
-	if minetest.setting_getbool("creative_mode") then
-		return
-	end
+	if minetest.setting_getbool("creative_mode") or 
+			minetest.setting_getbool("keep_inventory_on_death") then return end
 	
 	local player_inv = player:get_inventory()
 	if player_inv:is_empty("main") and
@@ -167,7 +166,20 @@ minetest.register_on_dieplayer(function(player)
 	local param2 = minetest.dir_to_facedir(player:get_look_dir())
 	local player_name = player:get_player_name()
 	local player_inv = player:get_inventory()
-
+	
+	if minetest.setting_getbool("drop_items_on_death") then
+		-- drop items instead of delete
+		for i=1,player_inv:get_size("main") do
+			minetest.add_item(pos, player_inv:get_stack("main", i))
+		end
+		for i=1,player_inv:get_size("craft") do
+			minetest.add_item(pos, player_inv:get_stack("craft", i))
+		end
+		-- empty lists main and craft
+		player_inv:set_list("main", {})
+		player_inv:set_list("craft", {})
+		return
+	end
 	if (not may_replace(pos, player)) then
 		if (may_replace({x=pos.x, y=pos.y+1, z=pos.z}, player)) then
 			-- drop one node above if there's space

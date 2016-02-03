@@ -5,6 +5,12 @@
 # Whether creative mode (fast digging of all blocks, unlimited resources) should be enabled
 #creative_mode = false
 
+# Let the player keep their inventory when they die.
+#keep_inventory_on_death = false
+
+# Drop the players inventory when they die.
+#drop_items_on_death = false
+
 # The time in seconds after which the bones of a dead player can be looted by everyone
 # 0 to disable
 #share_bones_time = 1200
