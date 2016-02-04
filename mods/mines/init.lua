@@ -30,10 +30,12 @@ minetest.register_node("mines:dummy", {
 
 
 local ids = {
-	air = minetest.get_content_id("air"),
-	fence = minetest.get_content_id("default:fence_wood"),
-	wood = minetest.get_content_id("default:wood"),
-	dummy = minetest.get_content_id("mines:dummy")
+	c_air = minetest.get_content_id("air"),
+	c_fence = minetest.get_content_id("default:fence_wood"),
+	c_wood = minetest.get_content_id("default:wood"),
+	c_water = minetest.get_content_id("default:water_source"),
+	c_dummy = minetest.get_content_id("mines:dummy")
+	
 }
 
 local chest_stuff = {
@@ -43,8 +45,10 @@ local chest_stuff = {
 	{name="default:gold_ingot", max = 2},
 	{name="default:diamond", max = 1},
 	{name="default:pick_steel", max = 1},
-	{name="default:pick_diamond", max = 1}
-
+	{name="default:pick_diamond", max = 1},
+	{name="default:torch", max = 99},
+	{name="default:cobble", max = 50},
+	{name="default:torch", max = 99}
 }
 
 local function rotate_torch(pos)
@@ -97,7 +101,7 @@ local function check_dir(dir,old_dir)
 	end
 	return false
 end
-local function make_mine(mpos,p2,p3, vm_data, vx_area,cnt)
+local function make_mine(mpos,p2,p3, vm_data, vx_area,cnt, flooded)
 	local pos = {x=mpos.x,y=mpos.y,z=mpos.z}
 	for j=0,12,1 do
 	local switch = cnt+1
@@ -108,11 +112,19 @@ local function make_mine(mpos,p2,p3, vm_data, vx_area,cnt)
 	switch = n_switch
 
 		for i=0,20,1 do
-			local pillar = ids.air
-			local pillar_top = ids.air
+			local pillar = ids.c_air
+			local pillar_top = ids.c_air
+			if flooded then
+				pillar = ids.c_water
+				pillar_top = ids.c_water
+			end
+			local fill_with = ids.c_air
+			if flooded then
+				fill_with = ids.c_water
+			end
 			if i==0 or i == 5 or i == 10 or i == 15 or i == 20 then
-				pillar = ids.fence
-				pillar_top = ids.wood
+				pillar = ids.c_fence
+				pillar_top = ids.c_wood
 			end
 			local x1
 			local x2
@@ -172,25 +184,25 @@ local function make_mine(mpos,p2,p3, vm_data, vx_area,cnt)
 				z5 = pos.z+1
 			end
 			vm_data[vx_area:indexp({x=x1, y=pos.y-1, z=z1})] = pillar
-			vm_data[vx_area:indexp({x=x2, y=pos.y-1, z=z2})] = ids.air
+			vm_data[vx_area:indexp({x=x2, y=pos.y-1, z=z2})] = fill_with
 			vm_data[vx_area:indexp({x=x3, y=pos.y-1, z=z3})] = pillar
 
 			vm_data[vx_area:indexp({x=x1, y=pos.y, z=z1})] = pillar
-			vm_data[vx_area:indexp({x=x2, y=pos.y, z=z2})] = ids.air
+			vm_data[vx_area:indexp({x=x2, y=pos.y, z=z2})] = fill_with
 			vm_data[vx_area:indexp({x=x3, y=pos.y, z=z3})] = pillar
 
 			vm_data[vx_area:indexp({x=x1, y=pos.y+1, z=z1})] = pillar_top
 			vm_data[vx_area:indexp({x=x2, y=pos.y+1, z=z2})] = pillar_top
 			vm_data[vx_area:indexp({x=x3, y=pos.y+1, z=z3})] = pillar_top
 
-			if math.random(0,6) == 3 then 
-				vm_data[vx_area:indexp({x=x4, y=pos.y-1, z=z4})] = ids.dummy
+			if not flooded and math.random(0,6) == 3 then 
+				vm_data[vx_area:indexp({x=x4, y=pos.y-1, z=z4})] = ids.c_dummy
 				rotate_torch({x=x4, y=pos.y-1, z=z4})
 			end
 			if math.random(0,60) == 13 then
 				local p = {x=x5, y=pos.y-1, z=z5}
-				if vm_data[vx_area:indexp(p)] ~= ids.fence then
-					vm_data[vx_area:indexp(p)] = ids.dummy
+				if vm_data[vx_area:indexp(p)] ~= ids.c_fence then
+					vm_data[vx_area:indexp(p)] = ids.c_dummy
 					fill_chest(p)
 				end
 			end
@@ -211,8 +223,8 @@ local function make_mine(mpos,p2,p3, vm_data, vx_area,cnt)
 	end
 	if cnt == 0 then
 		minetest.log("action", "Created mine at ("..mpos.x..","..mpos.y..","..mpos.z..")")
-		local out2 = make_mine(p2,p3,mpos,vm_data,vx_area,1)
-		local out3 = make_mine(p3,p2,mpos,out2,vx_area,2)
+		local out2 = make_mine(p2,p3,mpos,vm_data,vx_area,1,flooded)
+		local out3 = make_mine(p3,p2,mpos,out2,vx_area,2,flooded)
 		return out3
 	else
 		return vm_data
@@ -220,9 +232,8 @@ local function make_mine(mpos,p2,p3, vm_data, vx_area,cnt)
 end
 
 local function find_cave(min,max,vm_data, vx_area)
-	local out = nil
 	for i in vx_area:iterp(min, max) do
-		if vm_data[i] == ids.air then
+		if vm_data[i] == ids.c_air then
 			local p = vx_area:position(i)
 			if p.y <= MINE_DEEP_MIN then out = p end
 		end		
@@ -244,10 +255,14 @@ minetest.register_on_generated(function(minp, maxp, seed)
 	local data = vm:get_data()
 	local va = VoxelArea:new{ MinEdge = emin, MaxEdge = emax }
 	local mpos = find_cave(emin,emax,data,va)
-	if mpos == nil then return end
+	if not mpos then return end
 	local mpos2 = {x=mpos.x+math.random(0,3),y=mpos.y-1,z=mpos.z}
 	local mpos3 = {x=mpos.x,y=mpos.y-2,z=mpos.z+math.random(0,3)}
-	data = make_mine(mpos,mpos2,mpos3, data, va, 0)
+	local flooded = false
+	if math.random(0,20) == 20 then
+		flooded = true
+	end
+	data = make_mine(mpos,mpos2,mpos3, data, va, 0, flooded)
 	vm:set_data(data)
 	vm:calc_lighting(emin,emax)
 	vm:update_liquids()
