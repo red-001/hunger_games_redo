@@ -40,3 +40,15 @@
 # Whether players can skip night by sleeping
 # Default value is true
 #enable_bed_night_skip = true
+
+# at this deep mines are created
+#mines_deep_min = -64
+
+# up to this deep mines are created
+#mines_deep_max = -380
+
+# increase this value to generate more mines
+#mines_spawnfactor = 1.5
+
+# Disable the mines mod.
+#disable_mines = false

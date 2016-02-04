@@ -1,3 +1,5 @@
+local disable_mines = minetest.setting_getbool("disable_mines") 
+if disable_mines then return end
 local MINE_DEEP_MIN = tonumber(minetest.setting_get("mines_deep_min"))
 local MINE_DEEP_MAX = tonumber(minetest.setting_get("mines_deep_max"))
 local MINE_FACTOR = tonumber(minetest.setting_get("mines_spawnfactor"))
@@ -69,8 +71,6 @@ local function fill_chest(pos)
 			if n.name == "mines:dummy" then
 				minetest.set_node(pos, {name="default:chest"})
 				local meta = minetest.get_meta(pos)
-				--meta:set_string("formspec",default.chest_formspec)
-				--meta:set_string("infotext", "Chest")
 				local inv = meta:get_inventory()
 				inv:set_size("main", 8*4)
 				for i=0,2,1 do
