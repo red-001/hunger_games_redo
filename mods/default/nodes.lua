@@ -1783,3 +1783,11 @@ minetest.register_node("default:nyancat_rainbow", {
 	is_ground_content = false,
 	sounds = default.node_sound_defaults(),
 })
+
+minetest.register_node("default:straw", {
+	description = "Straw",
+	tiles = {"default_straw.png"},
+	is_ground_content = false,
+	groups = {snappy=3, flammable=4},
+	sounds = default.node_sound_leaves_defaults(),
+})
