@@ -3,15 +3,6 @@
 
 bones = {}
 
-local function is_owner(pos, name)
-	local owner = minetest.get_meta(pos):get_string("owner")
-	local privs = minetest.get_player_privs(name)
-	if owner == "" or owner == name or privs.access then
-		return true
-	end
-	return false
-end
-
 bones.bones_formspec =
 	"size[8,9]"..
 	default.gui_bg..
@@ -44,24 +35,10 @@ minetest.register_node("bones:bones", {
 	
 	can_dig = function(pos, player)
 		local inv = minetest.get_meta(pos):get_inventory()
-		return is_owner(pos, player:get_player_name()) and inv:is_empty("main")
-	end,
-	
-	allow_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
-		if is_owner(pos, player:get_player_name()) then
-			return count
-		end
-		return 0
+		return inv:is_empty("main")
 	end,
 	
 	allow_metadata_inventory_put = function(pos, listname, index, stack, player)
-		return 0
-	end,
-	
-	allow_metadata_inventory_take = function(pos, listname, index, stack, player)
-		if is_owner(pos, player:get_player_name()) then
-			return stack:get_count()
-		end
 		return 0
 	end,
 	
@@ -73,9 +50,6 @@ minetest.register_node("bones:bones", {
 	end,
 	
 	on_punch = function(pos, node, player)
-		if(not is_owner(pos, player:get_player_name())) then
-			return
-		end
 		
 		if(minetest.get_meta(pos):get_string("infotext") == "") then
 			return
@@ -104,18 +78,6 @@ minetest.register_node("bones:bones", {
 				minetest.add_item(pos,"bones:bones")
 			end
 			minetest.remove_node(pos)
-		end
-	end,
-	
-	on_timer = function(pos, elapsed)
-		local meta = minetest.get_meta(pos)
-		local time = meta:get_int("time") + elapsed
-		if time >= share_bones_time then
-			meta:set_string("infotext", meta:get_string("owner").."'s old bones")
-			meta:set_string("owner", "")
-		else
-			meta:set_int("time", time)
-			return true
 		end
 	end,
 })
@@ -223,19 +185,5 @@ minetest.register_on_dieplayer(function(player)
 	player_inv:set_list("craft", {})
 	
 	meta:set_string("formspec", bones.bones_formspec)
-	meta:set_string("owner", player_name)
-	
-	if share_bones_time ~= 0 then
-		meta:set_string("infotext", player_name.."'s fresh bones")
-
-		if share_bones_time_early == 0 or not minetest.is_protected(pos, player_name) then
-			meta:set_int("time", 0)
-		else
-			meta:set_int("time", (share_bones_time - share_bones_time_early))
-		end
-
-		minetest.get_node_timer(pos):start(10)
-	else
-		meta:set_string("infotext", player_name.."'s bones")
-	end
+	meta:set_string("infotext", player_name.."'s bones")
 end)
